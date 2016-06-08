@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "900955738593",
+    "firebase_url": "https://project-508672422003711190.firebaseio.com",
+    "project_id": "project-508672422003711190",
+    "storage_bucket": "project-508672422003711190.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:900955738593:android:50abbeab1042ed5d",
+        "android_client_info": {
+          "package_name": "istaging.com.firebasestoragedemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "900955738593-0ft951ensjsujqeoin4hm1o3ohsh4fo2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAym27XY362z3ZctALyldEqqqRKV-l-yIo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
