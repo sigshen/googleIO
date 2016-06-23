@@ -26,6 +26,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -148,8 +149,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void upload(String picturePath) {
-        Log.d(TAG, "---picturePath---");
-        Log.d(TAG, picturePath);
         FirebaseStorage storage = FirebaseStorage.getInstance();
 
         // Create a storage reference from our app
@@ -164,7 +163,13 @@ public class MainActivity extends AppCompatActivity {
             Uri file = Uri.fromFile(uploadFile);
             StorageReference imageRef = storageRef.child("images/" + file.getLastPathSegment());
             uploadTask = imageRef.putFile(file);
-            uploadTask.addOnFailureListener(new OnFailureListener() {
+            uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                    double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot.getTotalByteCount());
+                    Log.d(TAG, "Upload is " + progress + "% done");
+                }
+            }).addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
                     Log.d(TAG, "Handle unsuccessful uploads");
