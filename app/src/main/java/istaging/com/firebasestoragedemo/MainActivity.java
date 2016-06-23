@@ -1,9 +1,9 @@
 package istaging.com.firebasestoragedemo;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -26,7 +26,9 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnPausedListener;
 import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -34,9 +36,11 @@ import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
     final String TAG = "MainActivity";
+    int RESULT_LOAD_IMAGE = 0;
+
+    SharedPreferences sharedPreferences;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
-    public int RESULT_LOAD_IMAGE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        sharedPreferences = getSharedPreferences("firebasedata", MODE_PRIVATE);
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -134,6 +139,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        Log.d(TAG, "If there's an upload in progress, save the reference so you can query it laster");
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        Log.d(TAG, "If there was an upload in progress, get its reference and create a new StorageReference");
+    }
+
+    @Override
     protected  void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && data != null) {
@@ -152,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         FirebaseStorage storage = FirebaseStorage.getInstance();
 
         // Create a storage reference from our app
-        StorageReference storageRef = storage.getReferenceFromUrl("gs://project-508672422003711190.appspot.com");
+        final StorageReference storageRef = storage.getReferenceFromUrl("gs://project-508672422003711190.appspot.com");
 
         UploadTask uploadTask;
         // File uploadFile = new File(Environment.getExternalStorageDirectory() + "/iStaging/FolderList/Sample1/HighQuality/Sample1_Outdoors_14645743270_Raw.vr.jpg");
@@ -161,12 +180,32 @@ public class MainActivity extends AppCompatActivity {
         if (uploadFile.exists()) {
             Log.d(TAG, "file exist");
             Uri file = Uri.fromFile(uploadFile);
-            StorageReference imageRef = storageRef.child("images/" + file.getLastPathSegment());
-            uploadTask = imageRef.putFile(file);
-            uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            final StorageReference imageRef = storageRef.child("images/" + file.getLastPathSegment());
+
+            String sessionUriFromStorage = sharedPreferences.getString(imageRef.toString(), null);
+            if (sessionUriFromStorage != null) {
+                Log.d(TAG, "awesome resume!");
+                // resume the upload task from where it left off when the process died.
+                // to do this, pass the sessionUri as the last parameter
+                uploadTask = imageRef.putFile(file, new StorageMetadata.Builder().build(), Uri.parse(sessionUriFromStorage));
+            } else {
+                uploadTask = imageRef.putFile(file);
+            }
+
+            uploadTask.addOnPausedListener(new OnPausedListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onPaused(UploadTask.TaskSnapshot taskSnapshot) {
+                    Log.d(TAG, "Upload is paused");
+                }
+            }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
                 @Override
                 public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
                     double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot.getTotalByteCount());
+                    Uri sessionUri = taskSnapshot.getUploadSessionUri();
+                    if (sessionUri != null) {
+                        // save the sessionUri to persistent storage in case the process dies.
+                        sharedPreferences.edit().putString(imageRef.toString(), sessionUri.toString()).apply();
+                    }
                     Log.d(TAG, "Upload is " + progress + "% done");
                 }
             }).addOnFailureListener(new OnFailureListener() {
@@ -181,6 +220,8 @@ public class MainActivity extends AppCompatActivity {
                     // taskSnapShot.getMetadata() contains file metadata such as size, content-type, and download URL.
                     Uri downloadUrl = taskSnapshot.getDownloadUrl();
                     Log.d(TAG, "downloadUrl: " + downloadUrl);
+                    // Delete sharedPreferences
+                    sharedPreferences.edit().remove(imageRef.toString()).commit();
                 }
             });
         } else {
