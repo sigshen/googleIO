@@ -168,64 +168,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void upload(String picturePath) {
-        FirebaseStorage storage = FirebaseStorage.getInstance();
-
-        // Create a storage reference from our app
-        final StorageReference storageRef = storage.getReferenceFromUrl("gs://project-508672422003711190.appspot.com");
-
-        UploadTask uploadTask;
-        // File uploadFile = new File(Environment.getExternalStorageDirectory() + "/iStaging/FolderList/Sample1/HighQuality/Sample1_Outdoors_14645743270_Raw.vr.jpg");
-        File uploadFile = new File(picturePath);
-
-        if (uploadFile.exists()) {
-            Log.d(TAG, "file exist");
-            Uri file = Uri.fromFile(uploadFile);
-            final StorageReference imageRef = storageRef.child("images/" + file.getLastPathSegment());
-
-            String sessionUriFromStorage = sharedPreferences.getString(imageRef.toString(), null);
-            if (sessionUriFromStorage != null) {
-                Log.d(TAG, "awesome resume!");
-                // resume the upload task from where it left off when the process died.
-                // to do this, pass the sessionUri as the last parameter
-                uploadTask = imageRef.putFile(file, new StorageMetadata.Builder().build(), Uri.parse(sessionUriFromStorage));
-            } else {
-                uploadTask = imageRef.putFile(file);
-            }
-
-            uploadTask.addOnPausedListener(new OnPausedListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onPaused(UploadTask.TaskSnapshot taskSnapshot) {
-                    Log.d(TAG, "Upload is paused");
-                }
-            }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                    double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot.getTotalByteCount());
-                    Uri sessionUri = taskSnapshot.getUploadSessionUri();
-                    if (sessionUri != null) {
-                        // save the sessionUri to persistent storage in case the process dies.
-                        sharedPreferences.edit().putString(imageRef.toString(), sessionUri.toString()).apply();
-                    }
-                    Log.d(TAG, "Upload is " + progress + "% done");
-                }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Log.d(TAG, "Handle unsuccessful uploads");
-                    Log.d(TAG, e.toString());
-                }
-            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    // taskSnapShot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                    Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                    Log.d(TAG, "downloadUrl: " + downloadUrl);
-                    // Delete sharedPreferences
-                    sharedPreferences.edit().remove(imageRef.toString()).commit();
-                }
-            });
-        } else {
-            Log.d(TAG, "File not found.");
-        }
+        FirebaseUtils firebaseUtils = FirebaseUtils.getInstance(this);
+        firebaseUtils.upload(picturePath);
     }
 }
