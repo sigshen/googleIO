@@ -19,12 +19,16 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by iStaging on 2016/6/23.
  */
 public class FirebaseUtils {
     OnUploadListener mCallback;
+    Map<String, Double> progressMap = new HashMap<String, Double>();
 
     public final String TAG = "FirebaseUtils";
     public final String FIREBASE_STORAGE_URL = "gs://project-508672422003711190.appspot.com";
@@ -69,14 +73,20 @@ public class FirebaseUtils {
         return singleton;
     }
 
-    public void doUpload(String picturePath) {
+    public void doUpload(final ArrayList<String> filepaths) {
+        for (String filepath: filepaths) {
+            upload(filepath);
+        }
+    }
+
+    public void upload(String filepath) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
 
         // Create a storage reference from our app
         StorageReference storageRef = storage.getReferenceFromUrl(FIREBASE_STORAGE_URL);
 
         UploadTask uploadTask;
-        File uploadFile = new File(picturePath);
+        File uploadFile = new File(filepath);
 
         if (uploadFile.exists()) {
             Log.d(TAG, "file exist");
@@ -109,7 +119,9 @@ public class FirebaseUtils {
                         sharedPreferences.edit().putString(imageRef.toString(), sessionUri.toString()).apply();
                     }
                     // Log.d(TAG, "Upload is " + progress + "% done");
-                    mCallback.onUploadProgress("Upload is " + progress + "% done");
+                    // mCallback.onUploadProgress("Upload is " + progress + "% done");
+                    progressMap.put(imageRef.toString(), progress);
+                    mCallback.onUploadProgress(progressMap);
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -134,6 +146,6 @@ public class FirebaseUtils {
 
 
     public interface OnUploadListener {
-        public void onUploadProgress(String message);
+        public void onUploadProgress(final Map<String, Double> map);
     }
 }

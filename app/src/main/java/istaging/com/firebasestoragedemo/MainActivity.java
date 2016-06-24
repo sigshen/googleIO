@@ -33,6 +33,9 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnUploadListener {
     final String TAG = "MainActivity";
@@ -79,9 +82,13 @@ public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnU
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // upload();
-                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(intent, RESULT_LOAD_IMAGE);
+                // Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                // startActivityForResult(intent, RESULT_LOAD_IMAGE);
+
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), RESULT_LOAD_IMAGE);
             }
         });
     }
@@ -163,17 +170,25 @@ public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnU
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
             String picturePath = cursor.getString(columnIndex);
             cursor.close();
-            upload(picturePath);
+
+            ArrayList<String> filepaths = new ArrayList<>(Arrays.asList(
+                    "/storage/emulated/0/Download/panorama-20.jpg",
+                    "/storage/emulated/0/Download/test3.jpg"
+            ));
+            doUpload(filepaths);
         }
     }
 
     @Override
-    public void onUploadProgress(String progressMsg) {
-        Log.d(TAG, progressMsg);
+    public void onUploadProgress(final Map<String, Double> map) {
+        for (Map.Entry<String, Double> entry: map.entrySet()) {
+            String msg = entry.getKey() + " Upload is " + entry.getValue() + "% done";
+            Log.d(TAG, msg);
+        }
     }
 
-    private void upload(String picturePath) {
+    private void doUpload(final ArrayList<String> filepaths) {
         FirebaseUtils firebaseUtils = FirebaseUtils.getInstance(this);
-        firebaseUtils.doUpload(picturePath);
+        firebaseUtils.doUpload(filepaths);
     }
 }
