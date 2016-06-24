@@ -34,7 +34,7 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnUploadListener {
     final String TAG = "MainActivity";
     int RESULT_LOAD_IMAGE = 0;
 
@@ -167,8 +167,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onUploadProgress(String progressMsg) {
+        Log.d(TAG, progressMsg);
+    }
+
     private void upload(String picturePath) {
         FirebaseUtils firebaseUtils = FirebaseUtils.getInstance(this);
-        firebaseUtils.upload(picturePath);
+        firebaseUtils.doUpload(picturePath);
     }
 }

@@ -24,6 +24,7 @@ import java.io.File;
  * Created by iStaging on 2016/6/23.
  */
 public class FirebaseUtils {
+    OnUploadListener mCallback;
 
     public final String TAG = "FirebaseUtils";
     public final String FIREBASE_STORAGE_URL = "gs://project-508672422003711190.appspot.com";
@@ -35,6 +36,15 @@ public class FirebaseUtils {
 
     private static FirebaseUtils singleton;
     private FirebaseUtils(Activity activity) {
+        // This makes sure that the container activity has implemented
+        // the callback interface. if not, it throws an exception
+        try {
+            mCallback = (OnUploadListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString()
+             + "must implement OnUploadListener");
+        }
+
         sharedPreferences = activity.getSharedPreferences(FIREBASE_SHARED_PREF_NAME, Context.MODE_PRIVATE);
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -59,7 +69,7 @@ public class FirebaseUtils {
         return singleton;
     }
 
-    public void upload(String picturePath) {
+    public void doUpload(String picturePath) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
 
         // Create a storage reference from our app
@@ -98,7 +108,8 @@ public class FirebaseUtils {
                         // save the sessionUri to persistent storage in case the process dies.
                         sharedPreferences.edit().putString(imageRef.toString(), sessionUri.toString()).apply();
                     }
-                    Log.d(TAG, "Upload is " + progress + "% done");
+                    // Log.d(TAG, "Upload is " + progress + "% done");
+                    mCallback.onUploadProgress("Upload is " + progress + "% done");
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -119,5 +130,10 @@ public class FirebaseUtils {
         } else {
             Log.d(TAG, "File not found.");
         }
+    }
+
+
+    public interface OnUploadListener {
+        public void onUploadProgress(String message);
     }
 }
