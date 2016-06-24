@@ -28,18 +28,22 @@ import java.util.Map;
  */
 public class FirebaseUtils {
     OnUploadListener mCallback;
+
     Map<String, Double> progressMap = new HashMap<String, Double>();
+    Map<String, Integer> statusMap = new HashMap<String, Integer>(); // 0: in progress, 1: success, -1: failed
+    Map<String, String> downloadMap = new HashMap<String, String>();
 
     public final String TAG = "FirebaseUtils";
     public final String FIREBASE_STORAGE_URL = "gs://project-508672422003711190.appspot.com";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private int numOfTasks = 0;
 
     SharedPreferences sharedPreferences;
     final String FIREBASE_SHARED_PREF_NAME = "firebasedata";
 
     private static FirebaseUtils singleton;
-    private FirebaseUtils(Activity activity) {
+    private FirebaseUtils(Activity activity, int numOfTasks) {
         // This makes sure that the container activity has implemented
         // the callback interface. if not, it throws an exception
         try {
@@ -64,11 +68,13 @@ public class FirebaseUtils {
                 }
             }
         };
+
+        this.numOfTasks = numOfTasks;
     }
 
-    public static FirebaseUtils getInstance(Activity activity) {
+    public static FirebaseUtils getInstance(Activity activity, int numOfTasks) {
         if (singleton == null) {
-            return new FirebaseUtils(activity);
+            return new FirebaseUtils(activity, numOfTasks);
         }
         return singleton;
     }
@@ -92,6 +98,8 @@ public class FirebaseUtils {
             Log.d(TAG, "file exist");
             Uri file = Uri.fromFile(uploadFile);
             final StorageReference imageRef = storageRef.child("images/" + file.getLastPathSegment());
+
+            statusMap.put(imageRef.toString(), 0);
 
             String sessionUriFromStorage = sharedPreferences.getString(imageRef.toString(), null);
             if (sessionUriFromStorage != null) {
@@ -119,7 +127,6 @@ public class FirebaseUtils {
                         sharedPreferences.edit().putString(imageRef.toString(), sessionUri.toString()).apply();
                     }
                     // Log.d(TAG, "Upload is " + progress + "% done");
-                    // mCallback.onUploadProgress("Upload is " + progress + "% done");
                     progressMap.put(imageRef.toString(), progress);
                     mCallback.onUploadProgress(progressMap);
                 }
@@ -128,15 +135,24 @@ public class FirebaseUtils {
                 public void onFailure(@NonNull Exception e) {
                     Log.d(TAG, "Handle unsuccessful uploads");
                     Log.d(TAG, e.toString());
+
+                    statusMap.put(imageRef.toString(), -1);
                 }
             }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override
                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                     // taskSnapShot.getMetadata() contains file metadata such as size, content-type, and download URL.
                     Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                    Log.d(TAG, "downloadUrl: " + downloadUrl);
+                    // Log.d(TAG, "downloadUrl: " + downloadUrl);
+                    downloadMap.put(imageRef.toString(), downloadUrl.toString());
+                    statusMap.put(imageRef.toString(), 1);
+
                     // Delete sharedPreferences
                     sharedPreferences.edit().remove(imageRef.toString()).commit();
+
+                    if (checkAllDone()) {
+                        mCallback.onDone(statusMap, downloadMap);
+                    }
                 }
             });
         } else {
@@ -144,8 +160,19 @@ public class FirebaseUtils {
         }
     }
 
+    private boolean checkAllDone() {
+        int count = 0;
+        for (Map.Entry<String, Integer> entry: statusMap.entrySet()) {
+            int status = entry.getValue();
+            if ((status == 1) || (status == -1)) {
+                count++;
+            }
+        }
+        return (count == numOfTasks) ? true : false;
+    }
 
     public interface OnUploadListener {
         public void onUploadProgress(final Map<String, Double> map);
+        public void onDone(final Map<String, Integer> statueMap, final Map<String, String> downloadMap);
     }
 }

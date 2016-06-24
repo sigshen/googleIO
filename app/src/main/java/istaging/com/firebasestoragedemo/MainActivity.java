@@ -187,8 +187,18 @@ public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnU
         }
     }
 
+    @Override
+    public void onDone(final Map<String, Integer> statueMap, final Map<String, String> downloadMap) {
+        for (Map.Entry<String, String> entry: downloadMap.entrySet()) {
+            String downloadUrl = entry.getValue();
+            Log.d(TAG, downloadUrl);
+        }
+    }
+
     private void doUpload(final ArrayList<String> filepaths) {
-        FirebaseUtils firebaseUtils = FirebaseUtils.getInstance(this);
+        int numOfTasks = filepaths.size();
+
+        FirebaseUtils firebaseUtils = FirebaseUtils.getInstance(this, numOfTasks);
         firebaseUtils.doUpload(filepaths);
     }
 }
