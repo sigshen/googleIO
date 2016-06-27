@@ -93,7 +93,7 @@ public class FirebaseUtils {
         this.numOfTasks = numOfTasks;
     }
 
-    public static FirebaseUtils getInstance(Activity activity, int numOfTasks) {
+    public static synchronized  FirebaseUtils getInstance(Activity activity, int numOfTasks) {
         if (singleton == null) {
             return new FirebaseUtils(activity, numOfTasks);
         }
