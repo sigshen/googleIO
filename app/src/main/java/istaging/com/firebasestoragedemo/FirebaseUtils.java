@@ -118,9 +118,10 @@ public class FirebaseUtils {
         if (uploadFile.exists()) {
             Log.d(TAG, "file exist");
             Uri file = Uri.fromFile(uploadFile);
-            final StorageReference imageRef = storageRef.child("images/" + file.getLastPathSegment());
+            final String fileName = file.getLastPathSegment();
+            final StorageReference imageRef = storageRef.child("images/" + fileName);
 
-            statusMap.put(imageRef.toString(), 0);
+            statusMap.put(fileName, 0);
 
             String sessionUriFromStorage = sharedPreferences.getString(imageRef.toString(), null);
             if (sessionUriFromStorage != null) {
@@ -148,7 +149,7 @@ public class FirebaseUtils {
                         sharedPreferences.edit().putString(imageRef.toString(), sessionUri.toString()).apply();
                     }
                     // Log.d(TAG, "Upload is " + progress + "% done");
-                    progressMap.put(imageRef.toString(), progress);
+                    progressMap.put(fileName, progress);
                     mCallback.onUploadProgress(progressMap);
                 }
             }).addOnFailureListener(new OnFailureListener() {
@@ -157,7 +158,7 @@ public class FirebaseUtils {
                     Log.d(TAG, "Handle unsuccessful uploads");
                     Log.d(TAG, e.toString());
 
-                    statusMap.put(imageRef.toString(), -1);
+                    statusMap.put(fileName, -1);
                 }
             }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override
@@ -165,8 +166,8 @@ public class FirebaseUtils {
                     // taskSnapShot.getMetadata() contains file metadata such as size, content-type, and download URL.
                     Uri downloadUrl = taskSnapshot.getDownloadUrl();
                     // Log.d(TAG, "downloadUrl: " + downloadUrl);
-                    downloadMap.put(imageRef.toString(), downloadUrl.toString());
-                    statusMap.put(imageRef.toString(), 1);
+                    downloadMap.put(fileName, downloadUrl.toString());
+                    statusMap.put(fileName, 1);
 
                     // Delete sharedPreferences
                     sharedPreferences.edit().remove(imageRef.toString()).commit();
