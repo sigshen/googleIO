@@ -14,12 +14,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.database.Cursor;
+import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+
+import istaging.com.firebasestoragedemo.service.MyFirebaseMessagingService;
 
 public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnUploadListener {
     final String TAG = "MainActivity";
@@ -57,6 +60,13 @@ public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnU
                 startActivityForResult(Intent.createChooser(intent, "Select Picture"), RESULT_LOAD_IMAGE);
             }
         });
+
+        // receive notification from firebase?
+        Intent intent = getIntent();
+        if (intent != null && intent.getStringExtra(MyFirebaseMessagingService.EXTRA_MESSAGE) != null) {
+            String message = intent.getStringExtra(MyFirebaseMessagingService.EXTRA_MESSAGE);
+            Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
