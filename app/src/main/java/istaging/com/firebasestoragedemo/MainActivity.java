@@ -7,6 +7,7 @@ import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ListViewCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -14,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.database.Cursor;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -22,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
+import istaging.com.firebasestoragedemo.adapter.UsersAdapter;
+import istaging.com.firebasestoragedemo.adapter.items.User;
 import istaging.com.firebasestoragedemo.service.MyFirebaseMessagingService;
 
 public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnUploadListener {
@@ -47,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnU
             }
         });
 
+        /*
         Button button = (Button) findViewById(R.id.upload_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnU
                 startActivityForResult(Intent.createChooser(intent, "Select Picture"), RESULT_LOAD_IMAGE);
             }
         });
+        */
 
         // receive notification from firebase?
         Intent intent = getIntent();
@@ -67,6 +73,18 @@ public class MainActivity extends AppCompatActivity implements FirebaseUtils.OnU
             String message = intent.getStringExtra(MyFirebaseMessagingService.EXTRA_MESSAGE);
             Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
         }
+
+        // Construct the data source
+        User u1 = new User("Nathan", "San Diego");
+        User u2 = new User("Sig", "New taipei");
+        User[] users = {u1, u2};
+        ArrayList<User> arrayOfUsers = new ArrayList<User>(Arrays.asList(users));
+
+        // Create the adapter to convert the array of views
+        UsersAdapter adapter = new UsersAdapter(this, arrayOfUsers);
+        // Attach the adapter to ListView
+        ListView listView = (ListView) findViewById(R.id.lvItems);
+        listView.setAdapter(adapter);
     }
 
     @Override
